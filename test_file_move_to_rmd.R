@@ -17,7 +17,7 @@ library(viridis)
 library(janitor)
 
 library(readr)
-install.packages("gt")
+
 library(gt)
 library(tidyverse)
 library(lubridate)
@@ -31,8 +31,6 @@ elections <- read_csv(file = "ps_4_elections-poll-nc09-3.csv",
                       w_RV = col_double(),
                       final_weight = col_double(),
                       timestamp = col_datetime(format = "")))
-
-elections
 
 madlib1 <- elections %>% 
   filter(response == "Dem") %>% 
@@ -58,12 +56,58 @@ madlib4 <- elections %>%
   filter(file_race_black != "White") %>% 
   count()
 
-madlib5 <- group_by
-response_dem <- elections %>% 
+dem_time <- elections %>% 
   filter(response == "Dem") %>% 
-  mutate(mins = minutes(timestamp)/minute(1)) %>% 
-  min
-response_dem$mins
+  pull(timestamp)
+
+rep_t <- elections %>% 
+  filter(response == "Rep") %>% 
+  pull(timestamp)
+
+madlib5 <-round(rep_time[1] - dem_time[1])
+
+elections %>% 
+  select(response, race_eth, final_weight) %>% 
+  filter(race_eth != "[DO NOT READ] Don't know/Refused") %>%
+  mutate(race_eth = fct_relevel(race_eth, "White", "Black", "Hispanic", "Asian", "Other")) %>%
+  group_by(response,race_eth) %>% 
+  summarize(all = sum(final_weight)) %>% 
+  spread(key =  response, value = all, fill = 0) %>% 
+  mutate(all = Dem + Rep + Und + `3`) %>% 
+  mutate(Dem = Dem / all) %>% 
+  mutate(Rep = Rep / all) %>% 
+  mutate(Und = Und / all) %>% 
+  select(-all,-`3`) %>% 
+  gt() %>% 
+  tab_header(
+    title = "Polling Results by Race in North Carolina's 9th Congressional District") %>% 
+  cols_label(
+    race_eth = "",
+    Dem = "DEM.",
+    Rep = "REP.",
+    Und = "UND."
+  ) %>%
+  tab_source_note(source_note = "Source: New York Times Upshot/Siena College 2018 live polls") %>% 
+  fmt_percent(columns = vars(Dem, Rep, Und),
+              decimals = 0) %>% 
+  
+  na_if(0) %>%
+  fmt_missing(columns = vars(Und), rows = 4)
+
+graphic <- elections %>% 
+  select(educ, final_weight) %>% 
+  filter(educ != "[DO NOT READ] Refused") %>% 
+  mutate(educ = fct_relevel(educ, "Grade school", "High school", "Some college or trade school", "Bachelors' degree", "Graduate or Professional Degree")) %>% 
+  ggplot(aes(x = educ, y = final_weight)) +
+  geom_violin() + 
+  geom_jitter(width = 0.2, size = 1.25, alpha = 0.4) + 
+  coord_flip() +
+  labs(title = "The More Educated Matter Less in North Carolina 9th ",
+       subtitle = "Poll gives more weight to people who are less likely to participate in polls",
+       caption = "New York Times Upshot/Siena College 2018 live polls") +
+  ylab("Weight Given to Respondent in Calculating Poll Results")
+graphic
+
   
   # Again, this is not a course in survey weighting. There is an argument that I
   # should just ignore the topic altogether. But, I really like to replicate
@@ -72,19 +116,8 @@ response_dem$mins
   # I count that as a victory.
   
   # All you need to know for this class is: Use sum(weight_var) in place of n().
-elections %>% 
-  select(response, file_race) %>% 
-  filter(file_race != "Unknown") %>% 
-  filter(response != "3") %>%
-  group_by(response,file_race) %>% 
-  count() %>% 
-  spread(key =  response, value = n) %>% 
-  replace_na(0) %>% 
-  mutate(all = Dem + Rep + Und) %>% 
-  mutate(Dem = Dem / all) %>% 
-  mutate(Rep = Rep / all) %>% 
-  mutate(Und = Und / all) %>% 
-  select(-all) %>% 
+  
+  
   
   # One of the biggest pieces of black magic incantation in R is ungroup(). (I
   # did not mention this in class.) Summary: Whenever you group a tibble (as we
