@@ -1,0 +1,123 @@
+---
+title: "Problem Set #4"
+author: "Nicholas Dow"
+date: "February 27, 2019"
+output: html_document
+---
+
+```{r setup, echo = FALSE, message = FALSE, warning = FALSE}
+library(dplyr)
+
+# dplyr for general data manipulation
+
+library(ggplot2)
+
+# ggplot2 for visualization of data
+
+library(ggridges)
+
+# ggridges for a specific kind of visual display
+
+library(viridis)
+
+# viridis to get gradient of colors in visual display
+
+library(janitor)
+
+# janitor to clean up data from xlxs file
+
+library(readxl)
+
+# readxl to get data out of xlxs file
+
+harvard_enrollment <- read_excel("ps_3_enrollment.xlsx", skip=3) %>% 
+  
+  # We read the file, and skip 3 lines because there is junk data there
+  
+  clean_names() %>% 
+  
+  # We clean the names using the janitor pack, so that the data is easy to use
+  
+  filter(! is.na(course_section_code)) %>%
+  
+  # We throw out misc classes as specified by the pset
+  
+  filter(u_grad > 5) %>% 
+  
+  # We filter out classes that are less than 5 people as specified
+  
+  filter(u_grad/total > .5)
+  
+  # We filter out classes that are not majority undergrad
+
+madlib_1 <- harvard_enrollment %>% 
+  summarise(classes = n_distinct(course_name, instructor_full_name))
+
+# We are storing a value here to be plugged in to the R markdown later, it is a 1 value summary value.
+# I find the distinct for course name and instructor name, because I take into account classes that have the same name but vary depending on teacher
+
+madlib_2 <- harvard_enrollment %>% 
+  arrange(desc(u_grad)) %>% 
+  summarise(name_9 = nth(course_name, 9))
+
+# I make a list that is ordered by undergraduate enrollment and get the 9th value from the top
+
+madlib_3 <- harvard_enrollment %>% 
+  group_by(course_department) %>% 
+  summarise(dep = sum(u_grad)) %>% 
+  arrange(desc(dep)) %>% 
+  summarise(dep_6 = nth(course_department, 6))
+
+# I group by department, make a list of the total classes in each dept, sort the list by size, and get the 6th value from the top
+
+madlib_4 <- harvard_enrollment %>% 
+  filter(course_department == "Economics") %>% 
+  summarise(Ec_total = sum(u_grad))
+
+# I get the economics dept and get the total undergrade class enrollements
+
+```
+#Question 1
+#####The total number of courses is `r madlib_1$classes`.
+#####The course name with the 9th highest undergraduate enrollment is `r madlib_2$name_9`.
+#####The department with the 6th highest total undergraduate enrollment is `r madlib_3$dep_6`.
+#####Economics has a total undergraduate enrollment of `r madlib_4$Ec_total`. 
+
+#Question 2
+```{r echo = FALSE, message = FALSE, warning = FALSE}
+harvard_enrollment %>% 
+  filter(course_department %in% c("Statistics","Mathematics","Government","Expository Writing","Economics","Computer Science")) %>% 
+  
+  # I filter the dataset for the dept factors that I want, in the order that I want them
+  
+  ggplot(aes( x = u_grad, y = course_department)) +
+  
+  # I set the x and y axis of the graph
+  
+  geom_density_ridges_gradient(aes(fill = ..x..)) +
+  
+  # I call the special ridges plot to make my visualization look cool
+  
+  scale_x_log10() +
+  
+  # I scale the x axis so that it can convey information about the distribution of both small and very large classes that are typical at harvard
+  labs(title = "Course enrollments Spring 2019",
+       subtitle = "Departments vary in their typical Class sizes",
+       caption = "Source: Harvard Registrar") +
+  xlab("Class Size") +
+  ylab(NULL) +
+  
+  # I set the labs of all the information on the graph to get it to match
+  
+  scale_fill_viridis(guide = FALSE, option = "C") 
+
+  # I add a gradient to the plot that doesnt have a guide
+```
+
+
+
+There were X respondents who supported the Democratic candidate.
+There were X more respondents who favored the Republican candidate than who were Undecided.
+There are two gender variables (gender and gender_combined). There are X individuals for whom these variables have different values.
+There are X respondents listed as “White” under race_eth who are not listed as “White” under file_race_black.
+The first response of Rep came X minutes (rounded to the nearest minute) before the first response of Dem.
