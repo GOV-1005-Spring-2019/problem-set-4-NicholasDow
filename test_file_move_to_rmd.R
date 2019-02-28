@@ -108,6 +108,14 @@ graphic <- elections %>%
   ylab("Weight Given to Respondent in Calculating Poll Results")
 graphic
 
+resp_age <- elections %>% filter(response != "3") %>% count(response, ager)
+resp_age
+p <- ggplot(resp_age, aes(x = ager, y = n, fill = ager))
+p + geom_col(position = "dodge2") +
+  labs(x = NULL, y = "Percent", fill = "ager") +
+  guides(fill = FALSE) +
+  coord_flip()
+  facet_grid(~ response)
   
   # Again, this is not a course in survey weighting. There is an argument that I
   # should just ignore the topic altogether. But, I really like to replicate
