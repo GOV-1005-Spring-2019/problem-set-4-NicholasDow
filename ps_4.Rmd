@@ -13,15 +13,7 @@ library(ggplot2)
 ```
 
 ```{r madlibs, echo=FALSE, message=FALSE}
-elections <- read_csv(file = "ps_4_elections-poll-nc09-3.csv", 
-                      col_types =  cols(
-                      .default = col_character(),
-                      turnout_scale = col_double(),
-                      turnout_score = col_double(),
-                      w_LV = col_double(),
-                      w_RV = col_double(),
-                      final_weight = col_double(),
-                      timestamp = col_datetime(format = "")))
+elections <- read_csv(file = "ps_4_elections-poll-nc09-3.csv")
 
 madlib1 <- elections %>% 
   filter(response == "Dem") %>% 
@@ -55,7 +47,7 @@ rep_t <- elections %>%
   filter(response == "Rep") %>% 
   pull(timestamp)
 
-madlib5 <-round(rep_time[1] - dem_time[1])
+madlib5 <-round(rep_t[1] - dem_time[1])
 ```
 
 ```{r echo=FALSE, warning=FALSE}
