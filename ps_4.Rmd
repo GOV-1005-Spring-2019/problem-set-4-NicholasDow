@@ -19,9 +19,6 @@ madlib1 <- elections %>%
   filter(response == "Dem") %>% 
   count()
 
-
-
-
 fav_rep <- elections %>% 
   filter(hrep_fav == "Favorable") %>% 
   count()
@@ -49,7 +46,15 @@ rep_t <- elections %>%
 
 madlib5 <-round(rep_t[1] - dem_time[1])
 ```
+There were `r madlib1` respondents who supported the Democratic candidate.
 
+There were `r madlib2` more respondents who favored the Republican candidate than who were Undecided.
+
+There are two gender variables (gender and gender_combined). There are `r madlib3` individuals for whom these variables have different values.
+
+There are `r madlib4` respondents listed as “White” under race_eth who are not listed as “White” under file_race_black.
+
+The first response of Dem came `r madlib5` minutes (rounded to the nearest minute) before the first response of Rep.
 ```{r echo=FALSE, warning=FALSE}
 
 elections %>% 
