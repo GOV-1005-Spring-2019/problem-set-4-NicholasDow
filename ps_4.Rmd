@@ -1,0 +1,115 @@
+---
+title: "Problem Set #4"
+author: "Nicholas Dow"
+date: "February 27, 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE, echo=FALSE}
+library(tidyverse)
+library(readr)
+library(gt)
+library(ggplot2)
+```
+
+```{r madlibs, echo=FALSE, message=FALSE}
+elections <- read_csv(file = "ps_4_elections-poll-nc09-3.csv", 
+                      col_types =  cols(
+                      .default = col_character(),
+                      turnout_scale = col_double(),
+                      turnout_score = col_double(),
+                      w_LV = col_double(),
+                      w_RV = col_double(),
+                      final_weight = col_double(),
+                      timestamp = col_datetime(format = "")))
+
+madlib1 <- elections %>% 
+  filter(response == "Dem") %>% 
+  count()
+
+
+
+
+fav_rep <- elections %>% 
+  filter(hrep_fav == "Favorable") %>% 
+  count()
+und <- elections %>% 
+  filter(response == "Und") %>% 
+  count()
+madlib2 <- fav_rep$n - und$n
+
+madlib3 <- elections %>% 
+  filter(gender != gender_combined) %>% 
+  count()
+  
+madlib4 <- elections %>% 
+  filter(race_eth == "White") %>% 
+  filter(file_race_black != "White") %>% 
+  count()
+
+dem_time <- elections %>% 
+  filter(response == "Dem") %>% 
+  pull(timestamp)
+
+rep_t <- elections %>% 
+  filter(response == "Rep") %>% 
+  pull(timestamp)
+
+madlib5 <-round(rep_time[1] - dem_time[1])
+```
+
+```{r echo=FALSE, warning=FALSE}
+
+elections %>% 
+  select(response, race_eth, final_weight) %>% 
+  filter(race_eth != "[DO NOT READ] Don't know/Refused") %>%
+  mutate(race_eth = fct_relevel(race_eth, "White", "Black", "Hispanic", "Asian", "Other")) %>%
+  group_by(response,race_eth) %>% 
+  summarize(all = sum(final_weight)) %>% 
+  spread(key =  response, value = all, fill = 0) %>% 
+  mutate(all = Dem + Rep + Und + `3`) %>% 
+  mutate(Dem = Dem / all) %>% 
+  mutate(Rep = Rep / all) %>% 
+  mutate(Und = Und / all) %>% 
+  select(-all,-`3`) %>% 
+  gt() %>% 
+  tab_header(
+    title = "Polling Results by Race in North Carolina's 9th Congressional District") %>% 
+  cols_label(
+    race_eth = "",
+    Dem = "DEM.",
+    Rep = "REP.",
+    Und = "UND."
+  ) %>%
+  tab_source_note(source_note = "Source: New York Times Upshot/Siena College 2018 live polls") %>% 
+  fmt_percent(columns = vars(Dem, Rep, Und),
+              decimals = 0) %>% 
+  
+  na_if(0) %>%
+  fmt_missing(columns = vars(Und), rows = 4)
+```
+```{r echo=FALSE, warning=FALSE}
+graphic <- elections %>% 
+  select(educ, final_weight) %>% 
+  filter(educ != "[DO NOT READ] Refused") %>% 
+  mutate(educ = fct_relevel(educ, "Grade school", "High school", "Some college or trade school", "Bachelors' degree", "Graduate or Professional Degree")) %>% 
+  ggplot(aes(x = educ, y = final_weight)) +
+  geom_violin() + 
+  geom_jitter(width = 0.2, size = 1.25, alpha = 0.4) + 
+  coord_flip() +
+  labs(title = "The More Educated Matter Less in North Carolina 9th ",
+       subtitle = "Poll gives more weight to people who are less likely to participate in polls",
+       caption = "New York Times Upshot/Siena College 2018 live polls") +
+  ylab("Weight Given to Respondent in Calculating Poll Results")
+graphic
+```
+
+```{r echo=FALSE, warning=FALSE}
+resp_age <- elections %>% filter(response != "3") %>%  count(response, file_race, gender)
+resp_age
+p <- ggplot(resp_age, aes(x = response, y = n, fill=file_race))
+p + geom_col() +
+  labs(title = "Gender Race Breakdown by Party", x = NULL, y = "Number of responses", fill = "Race") +
+  facet_grid(~ gender) +
+  coord_flip()
+```
