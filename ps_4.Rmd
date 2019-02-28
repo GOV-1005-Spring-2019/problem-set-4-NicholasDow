@@ -7,44 +7,80 @@ output: html_document
 
 ```{r setup, include=FALSE, echo=FALSE}
 library(tidyverse)
+
+#Tidyverse for data management
+
 library(readr)
+
+#reader to read in the csv file
+
 library(gt)
+
+#gt for table display
+
 library(ggplot2)
+
+#ggplot for visualization
+
 ```
 ##Question 1
 ```{r madlibs, echo=FALSE, message=FALSE}
 elections <- read_csv(file = "ps_4_elections-poll-nc09-3.csv")
 
+#Reading in csv file
+
 madlib1 <- elections %>% 
   filter(response == "Dem") %>% 
   count()
 
+#Just counting up the # of Dem respondents
+
 fav_rep <- elections %>% 
   filter(hrep_fav == "Favorable") %>% 
   count()
+
+#Counting # of people who view republicans favorably, saving to number, maybe could have done a clever summarise fun
+
 und <- elections %>% 
   filter(response == "Und") %>% 
   count()
+
+#Counting # undecided like above
+
 madlib2 <- fav_rep$n - und$n
+
+#Taking Diff of two values
 
 madlib3 <- elections %>% 
   filter(gender != gender_combined) %>% 
   count()
+
+#Counting where gender is unequal in 2 specified cols
   
 madlib4 <- elections %>% 
   filter(race_eth == "White") %>% 
   filter(file_race_black != "White") %>% 
   count()
 
+#Filtering and counting for conditions of question
+
 dem_time <- elections %>% 
   filter(response == "Dem") %>% 
   pull(timestamp)
+
+#Pull sorts our data/timestamp types for us, so we can use that later
 
 rep_t <- elections %>% 
   filter(response == "Rep") %>% 
   pull(timestamp)
 
+#we do *above* for reps
+
 madlib5 <-round(rep_t[1] - dem_time[1])
+
+#We take the diff of the top of the sorted lists to get the difference in amount of time
+
+#We will put the madlibs in to the madlib below
 ```
 There were `r madlib1` respondents who supported the Democratic candidate.
 
@@ -63,15 +99,29 @@ The first response of Dem came `r madlib5` minutes (rounded to the nearest minut
 elections %>% 
   select(response, race_eth, final_weight) %>% 
   filter(race_eth != "[DO NOT READ] Don't know/Refused") %>%
+  
+  #We sort out the data that we need for processing
+  
   mutate(race_eth = fct_relevel(race_eth, "White", "Black", "Hispanic", "Asian", "Other")) %>%
+  
+  #Create factors for the ordering of the list
+  
   group_by(response,race_eth) %>% 
   summarize(all = sum(final_weight)) %>% 
+  
+  #Two Commands above are a cleaver way to sum up the final weights associated with resp eth combo
+  
   spread(key =  response, value = all, fill = 0) %>% 
+  
+  #Make left side of rows response instead of having as a col and switches the other values to stay lined up with their combo from cols
   mutate(all = Dem + Rep + Und + `3`) %>% 
   mutate(Dem = Dem / all) %>% 
   mutate(Rep = Rep / all) %>% 
   mutate(Und = Und / all) %>% 
   select(-all,-`3`) %>% 
+  
+  #Makes a couple new cols from the ones provided, then removes the two uneeded cols
+  
   gt() %>% 
   tab_header(
     title = "Polling Results by Race in North Carolina's 9th Congressional District") %>% 
@@ -82,11 +132,15 @@ elections %>%
     Und = "UND."
   ) %>%
   tab_source_note(source_note = "Source: New York Times Upshot/Siena College 2018 live polls") %>% 
+  
+  #Gt puts into formatted table which can be customized with some of the other commands above. We give the table everything it needs to be an informative table
   fmt_percent(columns = vars(Dem, Rep, Und),
               decimals = 0) %>% 
-  
   na_if(0) %>%
   fmt_missing(columns = vars(Und), rows = 4)
+
+  #We format the values to be percents, or dashed
+
 ```
 
 ##Question 3
@@ -95,26 +149,55 @@ elections %>%
 graphic <- elections %>% 
   select(educ, final_weight) %>% 
   filter(educ != "[DO NOT READ] Refused") %>% 
+  
+  #We sort out the data that we will be working with
+  
   mutate(educ = fct_relevel(educ, "Grade school", "High school", "Some college or trade school", "Bachelors' degree", "Graduate or Professional Degree")) %>% 
+  
+  #We turn educ into a factor in a specific order, so it shows up right later
+  
   ggplot(aes(x = educ, y = final_weight)) +
   geom_violin() + 
   geom_jitter(width = 0.2, size = 1.25, alpha = 0.4) + 
+  
+  #We put our data into its visualizaiton, and specify how parts of the data should show up.
+  
   coord_flip() +
   labs(title = "The More Educated Matter Less in North Carolina 9th ",
        subtitle = "Poll gives more weight to people who are less likely to participate in polls",
        caption = "New York Times Upshot/Siena College 2018 live polls") +
   ylab("Weight Given to Respondent in Calculating Poll Results") +
   xlab(NULL)
+
+  #We Flip the coords and then label every part of the graph to make it informative
 graphic
 ```
 
 ##Question 4
 
 ```{r echo=FALSE, warning=FALSE}
-resp_age <- elections %>% filter(response != "3") %>%  count(response, file_race, gender)
-p <- ggplot(resp_age, aes(x = response, y = n, fill=file_race))
+resp_race_age <- elections %>% 
+  filter(response != "3") %>%  
+  count(response, file_race, gender)
+
+#We sort out the information we need, I couldn't find anything particularly interesting, so I picked out data based on the only relations I could find
+#I count out the number of people in each catagory, I know that we have used final weights up to this point, but I don't use anything that I don't fully understand on principle.
+
+p <- ggplot(resp_race_age, aes(x = response, y = n, fill=file_race))
+
+#Specify the information and how it is being put into the visualization
+
 p + geom_col() +
   labs(title = "Gender Race Breakdown by Party", x = NULL, y = "Number of responses", fill = "Race") +
+  
+  #Put the data into the visualization and give it the proper labels to make it better at conveying information.
+  #Some people may not think the colors look good, I avoided changing the colors because fill was race and I'm not touching that with a 20ft pool. Dock me points I don't care, I'm not going to mess with color of the bars here.
+  #It went into fill because there are a greater # of races vs gender, and the information can be communicated more efficently in this format.
+  #We didn't split up race into multiple bars because some values were so small that the bars weren't easy to see. this method gives a decent relative size comparison by moving the data closer together
+
   facet_grid(~ gender) +
+  
+  #We facet_grid by gender to get two graphs to group information on gender to communicate some trends in gender.
   coord_flip()
+#flips coords for labels to show up more cleanly
 ```
