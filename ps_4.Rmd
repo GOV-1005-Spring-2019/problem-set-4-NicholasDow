@@ -11,7 +11,7 @@ library(readr)
 library(gt)
 library(ggplot2)
 ```
-
+##Question 1
 ```{r madlibs, echo=FALSE, message=FALSE}
 elections <- read_csv(file = "ps_4_elections-poll-nc09-3.csv")
 
@@ -55,6 +55,9 @@ There are two gender variables (gender and gender_combined). There are `r madlib
 There are `r madlib4` respondents listed as “White” under race_eth who are not listed as “White” under file_race_black.
 
 The first response of Dem came `r madlib5` minutes (rounded to the nearest minute) before the first response of Rep.
+
+##Question 2
+
 ```{r echo=FALSE, warning=FALSE}
 
 elections %>% 
@@ -85,6 +88,9 @@ elections %>%
   na_if(0) %>%
   fmt_missing(columns = vars(Und), rows = 4)
 ```
+
+##Question 3
+
 ```{r echo=FALSE, warning=FALSE}
 graphic <- elections %>% 
   select(educ, final_weight) %>% 
@@ -97,13 +103,15 @@ graphic <- elections %>%
   labs(title = "The More Educated Matter Less in North Carolina 9th ",
        subtitle = "Poll gives more weight to people who are less likely to participate in polls",
        caption = "New York Times Upshot/Siena College 2018 live polls") +
-  ylab("Weight Given to Respondent in Calculating Poll Results")
+  ylab("Weight Given to Respondent in Calculating Poll Results") +
+  xlab(NULL)
 graphic
 ```
 
+##Question 4
+
 ```{r echo=FALSE, warning=FALSE}
 resp_age <- elections %>% filter(response != "3") %>%  count(response, file_race, gender)
-resp_age
 p <- ggplot(resp_age, aes(x = response, y = n, fill=file_race))
 p + geom_col() +
   labs(title = "Gender Race Breakdown by Party", x = NULL, y = "Number of responses", fill = "Race") +
